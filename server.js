@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 const cryptojs = require('crypto-js');
 const SHA256 = cryptojs.SHA256;
 
+const express = require('express');
+const app = express();
+
 // connect to mongo
 mongoose.connect('mongodb://localhost/test', (err) => {
   if (err) {
@@ -138,23 +141,42 @@ function getAllUsers(callback) {
       if (callback) {
         callback(res);
       }
-      console.log('result of query >>\n' + res.join('\n'));
     }
   });
 }
 
-/*addUser({
-  username: 'dan',
-  email: 'dan@gmail.com',
-  pass: 'danthabeast',
-}, (err, user) => {
-  if (err) {
-    console.log(err);
-  } else {
-    getAllUsers();
-  }
-});*/
+// login request
+app.get('/auth', (req, res) => {
+  authenticate('username', req.query.username, req.query.pass, (err, user) => {
+    res.send(err || JSON.stringify(user));
+  });
+});
 
-authenticate('username', 'dan', 'danthabeast2', (err, user) => {
-  console.log(user);
+// user create request
+app.get('/create', (req, res) => {
+  addUser({
+    username: req.query.username,
+    email: req.query.email,
+    pass: req.query.pass,
+  }, (err, user) => {
+    res.send(err || JSON.stringify(user));
+  })
+});
+
+// request for all users
+app.get('/users', (req, res) => {
+  getAllUsers((err, users) => {
+    res.send(err || JSON.stringify(users))
+  });
+});
+
+// specific user request
+app.get('/user/:username', (req, res) => {
+  UserModel.find({ username: req.params.username }, (err, _res) => {
+    res.send(err || JSON.stringify(_res[0]));
+  });
+});
+
+app.listen(44, () => {
+  console.log('listening to port 44');
 });
